@@ -121,6 +121,9 @@ const updatePrice = async () => {
 
 const mint = async () => {
     const minted = Number(await nft.totalSupply());
+    let cost;
+    let gasLimit;
+    let newGasLimit;
     try {
         if (minted == MAX_SUPPLY) {
             await displayErrorMessage("Sorry, no pairs remaining!")
@@ -130,10 +133,10 @@ const mint = async () => {
                 await displayErrorMessage(`Max ${MAX_MINT} mints per transaction!`);
             }
 
-            const cost = ethers.BigNumber.from(priceWei).mul(numberToMint);
+            cost = ethers.BigNumber.from(priceWei).mul(numberToMint);
 
-            const gasLimit = await nft.estimateGas.mint(numberToMint, { value: cost })
-            const newGasLimit = parseInt((gasLimit * 1.2)).toString();
+            gasLimit = await nft.estimateGas.mint(numberToMint, { value: cost })
+            newGasLimit = parseInt((gasLimit * 1.2)).toString();
 
             await nft.mint(numberToMint, { value: cost, gasLimit: newGasLimit }).then(async (tx_) => {
                 await waitForTransaction(tx_);
@@ -141,7 +144,13 @@ const mint = async () => {
         }
     }
     catch (error) {
-        if ((error.message).includes("No mints remaining")) {
+        if (err.code && err.code === -32602) {
+            await nft.mint(numberToMint, { value: cost, gasLimit: newGasLimit, type: "0x1" }).then(async (tx_) => {
+                console.log("trying ledger fix");
+                await waitForTransaction(tx_);
+            });
+        }
+        else if ((error.message).includes("No mints remaining")) {
             await displayErrorMessage(`Error: No mints remaining!`)
         }
         else if ((error.message).includes("Quantity exceeded. Maximum is 5")) {
@@ -193,14 +202,15 @@ const checkIfWhitelisted = async () => {
 
 const whitelistMint = async () => {
     const minted = Number(await nft.totalSupply());
+    let gasLimit;
+    let newGasLimit;
     try {
-        let userAddress = await getAddress();
         if (minted == MAX_SUPPLY) {
             await displayErrorMessage("Sorry, no pairs remaining!")
         }
         else {
-            const gasLimit = await nft.estimateGas.whiteListMint()
-            const newGasLimit = parseInt((gasLimit * 1.2)).toString();
+            gasLimit = await nft.estimateGas.whiteListMint()
+            newGasLimit = parseInt((gasLimit * 1.2)).toString();
 
             await nft.whiteListMint({ gasLimit: newGasLimit }).then(async (tx_) => {
                 await waitForTransaction(tx_);
@@ -208,7 +218,13 @@ const whitelistMint = async () => {
         }
     }
     catch (error) {
-        if ((error.message).includes("No mints remaining")) {
+        if (err.code && err.code === -32602) {
+            await nft.whiteListMint({ gasLimit: newGasLimit, type: "0x1" }).then(async (tx_) => {
+                console.log("trying ledger fix");
+                await waitForTransaction(tx_);
+            });
+        }
+        else if ((error.message).includes("No mints remaining")) {
             await displayErrorMessage(`Error: No mints remaining!`)
         }
         else if ((error.message).includes("not on whitelist")) {
