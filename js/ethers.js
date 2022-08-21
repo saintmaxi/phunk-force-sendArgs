@@ -144,7 +144,7 @@ const mint = async () => {
         }
     }
     catch (error) {
-        if (err.code && err.code === -32602) {
+        if (error.code && error.code === -32602) {
             await nft.mint(numberToMint, { value: cost, gasLimit: newGasLimit, type: "0x1" }).then(async (tx_) => {
                 console.log("trying ledger fix");
                 await waitForTransaction(tx_);
@@ -218,7 +218,7 @@ const whitelistMint = async () => {
         }
     }
     catch (error) {
-        if (err.code && err.code === -32602) {
+        if (error.code && error.code === -32602) {
             await nft.whiteListMint({ gasLimit: newGasLimit, type: "0x1" }).then(async (tx_) => {
                 console.log("trying ledger fix");
                 await waitForTransaction(tx_);
